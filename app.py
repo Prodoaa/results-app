@@ -20,7 +20,7 @@ st.markdown("""
         margin-top: 20px;
         text-align: right;
     }
-    th { background-color: #f8f9fa !important; text-align: right !important; }
+    th { background-color: #f8f9fa !important; text-align: right !important; font-weight: bold; }
     td { text-align: right !important; }
     .stTable { direction: rtl !important; }
     </style>
@@ -66,7 +66,7 @@ if st.button("بحث عن النتيجة"):
         
         if os.path.exists(file_path):
             try:
-                # قراءة ملف الإكسل مع التأكد من استخدام المحرك الصحيح
+                # قراءة ملف الإكسل
                 df = pd.read_excel(file_path, engine='openpyxl')
                 
                 # توحيد نوع البيانات في عمود الرقم الأكاديمي للبحث بدقة
@@ -78,24 +78,30 @@ if st.button("بحث عن النتيجة"):
                 if not result.empty:
                     student_data = result.iloc[0]
                     st.markdown('<div class="result-card">', unsafe_allow_html=True)
-                    st.subheader(f"الاسم: {student_data['اسم الطالب']}")
+                    st.subheader(f"👤 الاسم: {student_data['اسم الطالب']}")
+                    st.write(f"🆔 الرقم الأكاديمي: {student_data['الرقم الأكاديمي']}")
                     st.divider()
                     
-                    # عرض الدرجات فقط (استثناء الاسم والرقم الأكاديمي من الجدول)
-                    # نتأكد من وجود الأعمدة قبل حذفها لتجنب الأخطاء
-                    cols_to_drop = [c for c in ['الرقم الأكاديمي', 'اسم الطالب'] if c in df.columns]
-                    grades_only = result.drop(columns=cols_to_drop)
+                    st.markdown("### 📋 تفاصيل الدرجات:")
                     
-                    # عرض البيانات بشكل طولي لتسهيل القراءة
-                    st.table(grades_only.T.rename(columns={result.index[0]: 'الدرجة'}))
+                    # استخراج الدرجات فقط وتنسيقها في جدول جديد ليظهر اسم المادة بوضوح
+                    cols_to_drop = [c for c in ['الرقم الأكاديمي', 'اسم الطالب'] if c in df.columns]
+                    grades_series = student_data.drop(labels=cols_to_drop)
+                    
+                    grades_df = pd.DataFrame({
+                        'المادة الدراسية': grades_series.index,
+                        'الدرجة': grades_series.values
+                    })
+                    
+                    # عرض الجدول النهائي
+                    st.table(grades_df)
                     st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     st.error("الرقم الأكاديمي غير موجود. تأكد من الرقم أو المرحلة المختارة.")
             except Exception as e:
-                st.error(f"حدث خطأ في قراءة البيانات. تأكد من أن الملف يحتوي على عمود 'الرقم الأكاديمي'.")
+                st.error(f"حدث خطأ في قراءة البيانات. تأكد أن الملف يحتوي على الأعمدة المطلوبة.")
         else:
             st.info(f"نعتذر، نتائج {student_stage} لم ترفع بعد في النظام.")
 
 st.markdown("---")
-st.caption("نظام عرض النتائج الأكاديمي | تم التحديث لعام 2026")
-
+st.caption("نظام عرض النتائج الأكاديمي | تم التحديث لعام 2024")
