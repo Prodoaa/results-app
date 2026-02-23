@@ -7,16 +7,13 @@ st.set_page_config(page_title="نتائج جامعة ابن سينا", layout="c
 
 st.markdown("""
     <style>
-    /* إخفاء القائمة العلوية وأيقونة GitHub وعناصر Streamlit */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stDeployButton {display:none;}
     
-    /* تنسيق الواجهة العامة */
     .main { text-align: right; direction: rtl; font-family: 'Arial'; }
     
-    /* تصميم رأس الصفحة (اسم الجامعة) - حجم أكبر */
     .university-header {
         text-align: center;
         padding: 30px;
@@ -26,7 +23,6 @@ st.markdown("""
     .university-name { color: #1e3c72; font-size: 36px; font-weight: bold; margin: 0; }
     .college-name { color: #2a5298; font-size: 30px; font-weight: bold; margin-top: 10px; }
     
-    /* نص "نظام الاستعلام" بحجم أكبر */
     .system-title {
         text-align: center; 
         font-size: 26px; 
@@ -38,11 +34,9 @@ st.markdown("""
         border-radius: 8px;
     }
 
-    /* تكبير نصوص المدخلات والأزرار */
     .stSelectbox label, .stTextInput label { font-size: 22px !important; font-weight: bold !important; }
-    .stButton>button { font-size: 24px !important; height: 3em; font-weight: bold; }
+    .stButton>button { font-size: 24px !important; height: 3em; font-weight: bold; width: 100%; }
 
-    /* تصميم بطاقة معلومات الطالب - ضخمة */
     .student-header {
         background: linear-gradient(90deg, #1e3c72, #2a5298);
         color: white;
@@ -55,7 +49,6 @@ st.markdown("""
     .student-name-text { font-size: 38px !important; font-weight: bold; margin: 0; }
     .student-id-text { font-size: 24px !important; opacity: 0.9; margin-top: 10px; }
     
-    /* تصميم مربعات الدرجات - حجم أكبر */
     .grade-box {
         background-color: #ffffff;
         border: 2px solid #dee2e6;
@@ -66,25 +59,21 @@ st.markdown("""
     }
     .subject-name { color: #555; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
     .subject-grade { color: #1e3c72; font-size: 32px; font-weight: bold; }
-    
-    /* تكبير نصوص الجداول والتنبيهات */
-    .stAlert p { font-size: 20px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# التأكد من وجود مجلد البيانات
 if not os.path.exists("data"): 
     os.makedirs("data")
 
-# --- بوابة الإدارة (Sidebar) ---
+# --- بوابة الإدارة ---
 with st.sidebar:
     st.markdown("### 🔐 الإدارة")
     admin_pass = st.text_input("كلمة مرور الإدارة:", type="password")
     
     if admin_pass == "secure_admin_2024": 
         st.success("تم تسجيل الدخول")
-        stage = st.selectbox("المرحلة:", ["المرحلة الأولى", "المرحلة الثانية", "المرحلة الثالثة", "المرحلة الرابعة", "المرحلة الخامسة"])
-        up_file = st.file_uploader("رفع ملف Excel:", type=["xlsx"])
+        stage = st.selectbox("تحديث نتائج:", ["المرحلة الأولى", "المرحلة الثانية", "المرحلة الثالثة", "المرحلة الرابعة", "المرحلة الخامسة"])
+        up_file = st.file_uploader(f"ارفع ملف Excel لـ {stage}:", type=["xlsx"])
         
         if up_file:
             file_path = os.path.join("data", f"{stage}.xlsx")
@@ -92,7 +81,7 @@ with st.sidebar:
                 f.write(up_file.getbuffer())
             st.sidebar.success(f"تم تحديث بيانات {stage}")
 
-# --- الواجهة الرئيسية (اسم الجامعة والكلية) ---
+# --- الواجهة الرئيسية ---
 st.markdown("""
     <div class="university-header">
         <h1 class="university-name">جامعة ابن سينا للعلوم الطبية والصيدلانية</h1>
@@ -103,14 +92,12 @@ st.markdown("""
 
 st.write("---")
 
-# اختيار المرحلة والرقم الأكاديمي
 col1, col2 = st.columns(2)
 with col1:
     st_stage = st.selectbox("اختر المرحلة الدراسية:", ["المرحلة الأولى", "المرحلة الثانية", "المرحلة الثالثة", "المرحلة الرابعة", "المرحلة الخامسة"])
 with col2:
     st_id = st.text_input("أدخل الرقم الأكاديمي:", placeholder="اكتب رقمك هنا")
 
-st.write("") # مسافة
 if st.button("🔍 عـرض النتيجة الآن"):
     if not st_id:
         st.warning("⚠️ يرجى إدخال الرقم الأكاديمي أولاً")
@@ -126,7 +113,6 @@ if st.button("🔍 عـرض النتيجة الآن"):
                 if not result.empty:
                     student = result.iloc[0]
                     
-                    # عرض معلومات الطالب بحجم ضخم
                     st.markdown(f"""
                         <div class='student-header'>
                             <p class='student-name-text'>{student['اسم الطالب']}</p>
@@ -136,11 +122,9 @@ if st.button("🔍 عـرض النتيجة الآن"):
 
                     st.markdown("<h2 style='text-align: right; color: #1e3c72;'>📋 تفاصيل الدرجات:</h2>", unsafe_allow_html=True)
                     
-                    # استخراج المواد
                     cols_to_drop = [c for c in ['الرقم الأكاديمي', 'اسم الطالب'] if c in df.columns]
                     grades = student.drop(labels=cols_to_drop)
 
-                    # عرض الدرجات في شبكة منظمة (2 في كل صف على الموبايل و3 على الكمبيوتر)
                     cols = st.columns(3)
                     for idx, (subject, grade) in enumerate(grades.items()):
                         with cols[idx % 3]:
@@ -153,9 +137,9 @@ if st.button("🔍 عـرض النتيجة الآن"):
                             """, unsafe_allow_html=True)
                     st.balloons()
                 else:
-                    st.error("❌ الرقم الأكاديمي الذي أدخلته غير موجود.")
+                    st.error("❌ الرقم الأكاديمي غير موجود.")
             except Exception as e:
-                st.error("⚠️ خطأ في قراءة ملف الإكسل. تأكد من تطابق أسماء الأعمدة.")
+                st.error("⚠️ خطأ في قراءة ملف الإكسل.")
         else:
             st.info(f"ℹ️ لم يتم رفع نتائج {st_stage} بعد.")
 
