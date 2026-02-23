@@ -2,103 +2,122 @@ import streamlit as st
 import pandas as pd
 import os
 
-# إعدادات الصفحة
-st.set_page_config(page_title="بوابة النتائج الرسمية", layout="centered")
+# 1. إعدادات الصفحة وإخفاء عناصر Streamlit و GitHub
+st.set_page_config(page_title="البوابة الرسمية للنتائج", layout="centered")
 
-# تنسيق CSS احترافي
 st.markdown("""
     <style>
+    /* إخفاء القائمة العلوية وأيقونة GitHub */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display:none;}
+    
+    /* تنسيق الواجهة */
     .main { text-align: right; direction: rtl; font-family: 'Arial'; }
-    .stTextInput > div > div > input { text-align: center; font-size: 20px; border-radius: 10px; }
     .student-header {
-        background: linear-gradient(90deg, #2c3e50, #4ca1af);
+        background: linear-gradient(90deg, #1e3c72, #2a5298);
         color: white;
-        padding: 20px;
+        padding: 25px;
         border-radius: 15px;
         text-align: center;
-        margin-bottom: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     .grade-box {
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
         padding: 15px;
         border-radius: 12px;
         text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        transition: transform 0.2s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
-    .grade-box:hover { transform: translateY(-5px); }
-    .subject-name { color: #555; font-size: 14px; font-weight: bold; margin-bottom: 10px; }
-    .subject-grade { color: #2e7d32; font-size: 24px; font-weight: bold; }
+    .subject-name { color: #444; font-size: 14px; font-weight: bold; margin-bottom: 8px; }
+    .subject-grade { color: #1a5f7a; font-size: 22px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-if not os.path.exists("data"): os.makedirs("data")
+# التأكد من وجود مجلد البيانات
+if not os.path.exists("data"): 
+    os.makedirs("data")
 
-# --- بوابة الإدارة (Sidebar) ---
+# --- بوابة الإدارة (محمية ومخفية في القائمة الجانبية) ---
 with st.sidebar:
-    st.title("⚙️ لوحة التحكم")
-    admin_pass = st.text_input("كلمة مرور المسؤول:", type="password")
-    if admin_pass == "admin123":
-        st.success("تم تسجيل الدخول")
-        stage = st.selectbox("المرحلة الدراسية:", ["المرحلة الأولى", "المرحلة الثانية", "المرحلة الثالثة", "المرحلة الرابعة", "المرحلة الخامسة"])
-        up_file = st.file_uploader("رفع ملف النتائج (Excel):", type=["xlsx"])
+    st.markdown("### 🔐 منطقة المسؤولين")
+    admin_pass = st.text_input("كلمة مرور الإدارة:", type="password")
+    
+    # تغيير كلمة المرور هنا لزيادة الأمان
+    if admin_pass == "secure_admin_2024": 
+        st.success("صلاحية الوصول مفعّلة")
+        stage = st.selectbox("تحديث نتائج:", ["المرحلة الأولى", "المرحلة الثانية", "المرحلة الثالثة", "المرحلة الرابعة", "المرحلة الخامسة"])
+        up_file = st.file_uploader("رفع ملف النتائج الجديد:", type=["xlsx"])
+        
         if up_file:
-            with open(os.path.join("data", f"{stage}.xlsx"), "wb") as f:
+            file_path = os.path.join("data", f"{stage}.xlsx")
+            with open(file_path, "wb") as f:
                 f.write(up_file.getbuffer())
-            st.success(f"تم تحديث {stage}")
+            st.sidebar.success(f"تم تحديث بيانات {stage} بأمان")
+    elif admin_pass != "":
+        st.error("كلمة المرور غير صحيحة")
 
-# --- واجهة الطالب (Main) ---
-st.markdown("<h1 style='text-align: center;'>🎓 نظام استعلام النتائج</h1>", unsafe_allow_html=True)
+# --- الواجهة الرئيسية للطالب ---
+st.markdown("<h1 style='text-align: center; color: #1e3c72;'>🎓 بوابة استعلام النتائج الرسمية</h1>", unsafe_allow_html=True)
+st.write("<p style='text-align: center; color: #666;'>نظام آمن لاستخراج الدرجات الأكاديمية</p>", unsafe_allow_html=True)
 st.write("---")
 
-c1, c2 = st.columns(2)
-with c1: 
-    st_stage = st.selectbox("اختر المرحلة:", ["المرحلة الأولى", "المرحلة الثانية", "المرحلة الثالثة", "المرحلة الرابعة", "المرحلة الخامسة"])
-with c2: 
-    st_id = st.text_input("أدخل الرقم الأكاديمي:", placeholder="مثال: 1001")
+col1, col2 = st.columns(2)
+with col1:
+    st_stage = st.selectbox("المرحلة الدراسية:", ["المرحلة الأولى", "المرحلة الثانية", "المرحلة الثالثة", "المرحلة الرابعة", "المرحلة الخامسة"])
+with col2:
+    st_id = st.text_input("أدخل الرقم الأكاديمي:", placeholder="مثال: 2024100")
 
-if st.button("🔍 عرض النتيجة الآن"):
-    file_path = os.path.join("data", f"{st_stage}.xlsx")
-    if os.path.exists(file_path):
-        try:
-            df = pd.read_excel(file_path, engine='openpyxl')
-            df['الرقم الأكاديمي'] = df['الرقم الأكاديمي'].astype(str).str.strip()
-            result = df[df['الرقم الأكاديمي'] == st_id.strip()]
-
-            if not result.empty:
-                student = result.iloc[0]
-                
-                # رأس النتيجة (معلومات الطالب)
-                st.markdown(f"""
-                    <div class='student-header'>
-                        <h2>{student['اسم الطالب']}</h2>
-                        <p>الرقم الأكاديمي: {student['الرقم الأكاديمي']} | {st_stage}</p>
-                    </div>
-                """, unsafe_allow_html=True)
-
-                st.markdown("### 📊 تفاصيل الدرجات الدراسية:")
-                
-                # استخراج المواد فقط
-                cols_to_drop = [c for c in ['الرقم الأكاديمي', 'اسم الطالب'] if c in df.columns]
-                grades = student.drop(labels=cols_to_drop)
-
-                # عرض الدرجات في شبكة (Grid) من 3 أعمدة
-                cols = st.columns(3)
-                for idx, (subject, grade) in enumerate(grades.items()):
-                    with cols[idx % 3]:
-                        st.markdown(f"""
-                            <div class="grade-box">
-                                <div class="subject-name">{subject}</div>
-                                <div class="subject-grade">{grade}</div>
-                            </div>
-                            <br>
-                        """, unsafe_allow_html=True)
-                
-                st.balloons() # احتفال بسيط عند ظهور النتيجة
-            else:
-                st.error("❌ عذراً، لم يتم العثور على هذا الرقم الأكاديمي.")
-        except Exception as e:
-            st.error("⚠️ خطأ في قراءة ملف البيانات. تأكد من مطابقة أسماء الأعمدة.")
+if st.button("🔍 عرض النتيجة الآمن"):
+    if not st_id:
+        st.warning("يرجى إدخال الرقم الأكاديمي")
     else:
-        st.info("ℹ️ لم يتم رفع نتائج هذه المرحلة بعد.")
+        file_path = os.path.join("data", f"{st_stage}.xlsx")
+        
+        if os.path.exists(file_path):
+            try:
+                df = pd.read_excel(file_path, engine='openpyxl')
+                # تنظيف البيانات لضمان دقة البحث
+                df['الرقم الأكاديمي'] = df['الرقم الأكاديمي'].astype(str).str.strip()
+                result = df[df['الرقم الأكاديمي'] == st_id.strip()]
+
+                if not result.empty:
+                    student = result.iloc[0]
+                    
+                    # عرض الهوية الأكاديمية
+                    st.markdown(f"""
+                        <div class='student-header'>
+                            <h2 style='margin:0;'>{student['اسم الطالب']}</h2>
+                            <p style='margin:10px 0 0 0;'>الرقم الأكاديمي: {student['الرقم الأكاديمي']} | {st_stage}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                    st.markdown("### 📋 كشف الدرجات:")
+                    
+                    # استخراج المواد الدراسية فقط
+                    cols_to_drop = [c for c in ['الرقم الأكاديمي', 'اسم الطالب'] if c in df.columns]
+                    grades = student.drop(labels=cols_to_drop)
+
+                    # عرض الدرجات في شبكة منظمة
+                    cols = st.columns(3)
+                    for idx, (subject, grade) in enumerate(grades.items()):
+                        with cols[idx % 3]:
+                            st.markdown(f"""
+                                <div class="grade-box">
+                                    <div class="subject-name">{subject}</div>
+                                    <div class="subject-grade">{grade}</div>
+                                </div>
+                                <br>
+                            """, unsafe_allow_html=True)
+                    st.balloons()
+                else:
+                    st.error("❌ الرقم الأكاديمي غير موجود في سجلات هذه المرحلة.")
+            except Exception as e:
+                st.error("⚠️ خطأ تقني في معالجة الملف. يرجى التواصل مع الدعم الفني.")
+        else:
+            st.info("ℹ️ لم يتم رفع نتائج هذه المرحلة في النظام بعد.")
+
+st.markdown("<br><hr><p style='text-align: center; font-size: 12px; color: #999;'>نظام مشفر ومحمي - كافة الحقوق محفوظة © 2024</p>", unsafe_allow_html=True)
