@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 # إعدادات الصفحة
-st.set_page_config(page_title="نظام النتائج الإلكتروني", layout="centered")
+st.set_page_config(page_title="نظام النتائج الأكاديمي", layout="centered")
 
 # تنسيق الواجهة (CSS) لدعم اللغة العربية وتحسين المظهر
 st.markdown("""
@@ -18,13 +18,15 @@ st.markdown("""
         box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
         border-right: 8px solid #28a745;
         margin-top: 20px;
+        text-align: right;
     }
     th { background-color: #f8f9fa !important; text-align: right !important; }
     td { text-align: right !important; }
+    .stTable { direction: rtl !important; }
     </style>
-    """, unsafe_allow_status=True)
+    """, unsafe_allow_html=True)
 
-# إنشاء مجلد تخزين الملفات
+# إنشاء مجلد تخزين الملفات إذا لم يكن موجوداً
 if not os.path.exists("data"):
     os.makedirs("data")
 
@@ -64,7 +66,8 @@ if st.button("بحث عن النتيجة"):
         
         if os.path.exists(file_path):
             try:
-                df = pd.read_excel(file_path)
+                # قراءة ملف الإكسل مع التأكد من استخدام المحرك الصحيح
+                df = pd.read_excel(file_path, engine='openpyxl')
                 
                 # توحيد نوع البيانات في عمود الرقم الأكاديمي للبحث بدقة
                 df['الرقم الأكاديمي'] = df['الرقم الأكاديمي'].astype(str).str.strip()
@@ -74,22 +77,24 @@ if st.button("بحث عن النتيجة"):
 
                 if not result.empty:
                     student_data = result.iloc[0]
-                    st.markdown('<div class="result-card">', unsafe_allow_status=True)
+                    st.markdown('<div class="result-card">', unsafe_allow_html=True)
                     st.subheader(f"الاسم: {student_data['اسم الطالب']}")
-                    st.write(f"الحالة: تم استخراج النتيجة بنجاح")
                     st.divider()
                     
                     # عرض الدرجات فقط (استثناء الاسم والرقم الأكاديمي من الجدول)
-                    grades_only = result.drop(columns=['الرقم الأكاديمي', 'اسم الطالب'])
+                    # نتأكد من وجود الأعمدة قبل حذفها لتجنب الأخطاء
+                    cols_to_drop = [c for c in ['الرقم الأكاديمي', 'اسم الطالب'] if c in df.columns]
+                    grades_only = result.drop(columns=cols_to_drop)
+                    
+                    # عرض البيانات بشكل طولي لتسهيل القراءة
                     st.table(grades_only.T.rename(columns={result.index[0]: 'الدرجة'}))
-                    st.markdown('</div>', unsafe_allow_status=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
                 else:
                     st.error("الرقم الأكاديمي غير موجود. تأكد من الرقم أو المرحلة المختارة.")
             except Exception as e:
-                st.error("حدث خطأ في قراءة ملف الإكسل. تأكد من وجود أعمدة 'الرقم الأكاديمي' و 'اسم الطالب'.")
+                st.error(f"حدث خطأ في قراءة البيانات. تأكد من أن الملف يحتوي على عمود 'الرقم الأكاديمي'.")
         else:
-            # رسالة تظهر إذا لم يقم الموظف برفع ملف المرحلة بعد
             st.info(f"نعتذر، نتائج {student_stage} لم ترفع بعد في النظام.")
 
 st.markdown("---")
-st.caption("نظام عرض النتائج الأكاديمي | جميع الحقوق محفوظة")
+st.caption("نظام عرض النتائج الأكاديمي | تم التحديث لعام 2024")
