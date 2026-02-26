@@ -7,16 +7,13 @@ st.set_page_config(page_title="نتائج جامعة ابن سينا", layout="c
 
 st.markdown("""
     <style>
-    /* إخفاء القائمة العلوية وأيقونة GitHub وعناصر Streamlit */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stDeployButton {display:none;}
     
-    /* تنسيق الواجهة العامة */
     .main { text-align: right; direction: rtl; font-family: 'Arial'; }
     
-    /* تصميم رأس الصفحة (اسم الجامعة) - حجم أكبر */
     .university-header {
         text-align: center;
         padding: 30px;
@@ -26,7 +23,6 @@ st.markdown("""
     .university-name { color: #1e3c72; font-size: 36px; font-weight: bold; margin: 0; }
     .college-name { color: #2a5298; font-size: 30px; font-weight: bold; margin-top: 10px; }
     
-    /* نص "نظام الاستعلام" بحجم أكبر */
     .system-title {
         text-align: center; 
         font-size: 26px; 
@@ -38,11 +34,9 @@ st.markdown("""
         border-radius: 8px;
     }
 
-    /* تكبير نصوص المدخلات والأزرار */
     .stSelectbox label, .stTextInput label { font-size: 22px !important; font-weight: bold !important; }
     .stButton>button { font-size: 24px !important; height: 3em; font-weight: bold; width: 100%; }
 
-    /* تصميم بطاقة معلومات الطالب - ضخمة */
     .student-header {
         background: linear-gradient(90deg, #1e3c72, #2a5298);
         color: white;
@@ -55,7 +49,6 @@ st.markdown("""
     .student-name-text { font-size: 38px !important; font-weight: bold; margin: 0; }
     .student-id-text { font-size: 24px !important; opacity: 0.9; margin-top: 10px; }
     
-    /* تصميم مربعات الدرجات - حجم أكبر */
     .grade-box {
         background-color: #ffffff;
         border: 2px solid #dee2e6;
@@ -65,18 +58,19 @@ st.markdown("""
         box-shadow: 0 4px 8px rgba(0,0,0,0.08);
     }
     .subject-name { color: #555; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-    .subject-grade { color: #1e3c72; font-size: 32px; font-weight: bold; }
     
-    /* تكبير نصوص الجداول والتنبيهات */
+    /* ألوان الدرجات الافتراضية والضعيفة */
+    .grade-normal { color: #1e3c72; font-size: 32px; font-weight: bold; }
+    .grade-fail { color: #d32f2f; font-size: 32px; font-weight: bold; }
+    
     .stAlert p { font-size: 20px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# التأكد من وجود مجلد البيانات
 if not os.path.exists("data"): 
     os.makedirs("data")
 
-# --- بوابة الإدارة (Sidebar) ---
+# --- بوابة الإدارة ---
 with st.sidebar:
     st.markdown("### 🔐 الإدارة")
     admin_pass = st.text_input("كلمة مرور الإدارة:", type="password")
@@ -92,7 +86,7 @@ with st.sidebar:
                 f.write(up_file.getbuffer())
             st.sidebar.success(f"تم تحديث بيانات {stage}")
 
-# --- الواجهة الرئيسية (اسم الجامعة والكلية) ---
+# --- الواجهة الرئيسية ---
 st.markdown("""
     <div class="university-header">
         <h1 class="university-name">جامعة ابن سينا للعلوم الطبية والصيدلانية</h1>
@@ -103,14 +97,12 @@ st.markdown("""
 
 st.write("---")
 
-# اختيار المرحلة والرقم الأكاديمي
 col1, col2 = st.columns(2)
 with col1:
     st_stage = st.selectbox("اختر المرحلة الدراسية:", ["المرحلة الأولى", "المرحلة الثانية", "المرحلة الثالثة", "المرحلة الرابعة", "المرحلة الخامسة"])
 with col2:
     st_id = st.text_input("أدخل الرقم الأكاديمي:", placeholder="اكتب رقمك هنا")
 
-st.write("") # مسافة
 if st.button("🔍 عـرض النتيجة الآن"):
     if not st_id:
         st.warning("⚠️ يرجى إدخال الرقم الأكاديمي أولاً")
@@ -126,7 +118,6 @@ if st.button("🔍 عـرض النتيجة الآن"):
                 if not result.empty:
                     student = result.iloc[0]
                     
-                    # عرض معلومات الطالب
                     st.markdown(f"""
                         <div class='student-header'>
                             <p class='student-name-text'>{student['اسم الطالب']}</p>
@@ -136,22 +127,33 @@ if st.button("🔍 عـرض النتيجة الآن"):
 
                     st.markdown("<h2 style='text-align: right; color: #1e3c72;'>📋 تفاصيل الدرجات:</h2>", unsafe_allow_html=True)
                     
-                    # استخراج المواد
                     cols_to_drop = [c for c in ['الرقم الأكاديمي', 'اسم الطالب'] if c in df.columns]
                     grades = student.drop(labels=cols_to_drop)
 
-                    # عرض الدرجات في شبكة منظمة
                     cols = st.columns(3)
                     for idx, (subject, grade) in enumerate(grades.items()):
+                        # منطق تحديد اللون: إذا كانت القيمة "ضعيف" أو أقل من 50
+                        is_fail = False
+                        str_grade = str(grade).strip()
+                        if str_grade == "ضعيف":
+                            is_fail = True
+                        else:
+                            try:
+                                if float(grade) < 50:
+                                    is_fail = True
+                            except:
+                                pass
+                        
+                        grade_class = "grade-fail" if is_fail else "grade-normal"
+                        
                         with cols[idx % 3]:
                             st.markdown(f"""
                                 <div class="grade-box">
                                     <div class="subject-name">{subject}</div>
-                                    <div class="subject-grade">{grade}</div>
+                                    <div class="subject-grade {grade_class}">{grade}</div>
                                 </div>
                                 <br>
                             """, unsafe_allow_html=True)
-                    # تم حذف سطر البالونات من هنا
                 else:
                     st.error("❌ الرقم الأكاديمي الذي أدخلته غير موجود.")
             except Exception as e:
